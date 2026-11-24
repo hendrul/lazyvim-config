@@ -1,0 +1,13 @@
+git:
+  diffRenderers:
+    - name: delta
+      type: stdinFilter
+      command: "delta --{{colorScheme}} --paging=never --side-by-side"
+      colorArg: always
+
+    - name: difftastic
+      type: extDiff
+      command: "difft --color=always --background={{colorScheme}} --syntax-highlight=on --display=side-by-side --context={{diffContext}} --width={{width}}"
+
+    - name: default
+      type: rawGit
