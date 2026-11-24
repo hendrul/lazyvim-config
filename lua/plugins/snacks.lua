@@ -34,8 +34,61 @@ local function scope_explorer_dirchanged_to_its_tab(picker)
   })
 end
 
+local function pick_tabs()
+  local current_tab = vim.api.nvim_get_current_tabpage()
+
+  Snacks.picker({
+    title = "Tabs",
+    layout = { preset = "select" },
+    finder = function()
+      local tabs = vim.api.nvim_list_tabpages()
+      local number_width = #tostring(#tabs)
+      local items = {}
+
+      for _, tabpage in ipairs(tabs) do
+        local tabnr = vim.api.nvim_tabpage_get_number(tabpage)
+        local cwd = vim.fn.getcwd(-1, tabnr)
+        local name = vim.fs.basename(vim.fs.normalize(cwd))
+        name = name ~= "" and name or cwd
+        local marker = tabpage == current_tab and "● " or "  "
+        local number = string.format("%" .. number_width .. "d", tabnr)
+        local display_cwd = vim.fn.fnamemodify(cwd, ":~")
+
+        items[#items + 1] = {
+          text = marker .. number .. "  " .. name .. "  " .. display_cwd,
+          tabpage = tabpage,
+          current = tabpage == current_tab,
+        }
+      end
+
+      return items
+    end,
+    format = "text",
+    confirm = function(picker, item)
+      picker:close()
+
+      if item and vim.api.nvim_tabpage_is_valid(item.tabpage) then
+        vim.schedule(function()
+          vim.api.nvim_set_current_tabpage(item.tabpage)
+        end)
+      end
+    end,
+    on_show = function(picker)
+      for index, item in ipairs(picker:items()) do
+        if item.current then
+          picker.list:view(index)
+          break
+        end
+      end
+    end,
+  })
+end
+
 return {
   "folke/snacks.nvim",
+  keys = {
+    { "<leader><tab>s", pick_tabs, desc = "Select Tab" },
+  },
   opts = {
     explorer = {
       replace_netrw = false,
